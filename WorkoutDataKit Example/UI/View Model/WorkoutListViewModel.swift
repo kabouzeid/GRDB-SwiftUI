@@ -15,16 +15,23 @@ class WorkoutListViewModel: ObservableObject {
     private let database: AppDatabase
     private var workoutsCancellable: AnyCancellable?
     
-    required init(database: AppDatabase) {
+    init(database: AppDatabase) {
+        print("INIT WORKOUT_LIST_VIEWMODEL")
         self.database = database
     }
     
     func bind() {
+        print("BIND WORKOUT_LIST_VIEWMODEL")
         workoutsCancellable = workoutsPublisher(in: database).assign(to: \.workouts, on: self)
     }
     
     func unbind() {
+        print("UNBIND WORKOUT_LIST_VIEWMODEL")
         workoutsCancellable?.cancel()
+    }
+    
+    deinit {
+        print("DEINIT WORKOUT_LIST_VIEWMODEL")
     }
     
     func workoutDetailViewModel(workout: Workout) -> WorkoutDetailViewModel {
@@ -44,12 +51,13 @@ class WorkoutListViewModel: ObservableObject {
     /// Returns a publisher of the workouts in the list
     private func workoutsPublisher(in database: AppDatabase) -> AnyPublisher<[Workout], Never> {
         database.workoutsOrderedByStartDatePublisher()
+            .breakpointOnError()
             .catch { error in
                 // Turn database errors into an empty list.
                 // Eventual error presentation is left as an exercise for the reader.
                 Just<[Workout]>([])
             }
-            .print()
+//            .print()
             .eraseToAnyPublisher()
     }
 }

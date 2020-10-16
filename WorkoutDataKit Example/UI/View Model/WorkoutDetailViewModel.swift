@@ -16,6 +16,10 @@ class WorkoutDetailViewModel: ObservableObject {
         workoutDetail?.workoutExercises ?? []
     }
     
+    var workoutId: Int64? {
+        workoutDetail?.workout.id
+    }
+    
     var workoutTitle: Binding<String> {
         Binding {
             self.workoutDetail?.workout.title ?? ""
@@ -28,17 +32,24 @@ class WorkoutDetailViewModel: ObservableObject {
     private let workoutID: Int64
     private var workoutDetailCancellable: AnyCancellable?
     
-    required init(database: AppDatabase, workoutID: Int64) {
+    init(database: AppDatabase, workoutID: Int64) {
+        print("INIT WORKOUT_DETAIL_VIEWMODEL")
         self.database = database
         self.workoutID = workoutID
     }
     
     func bind() {
+        print("BIND WORKOUT_DETAIL_VIEWMODEL")
         workoutDetailCancellable = workoutDetailPublisher(in: database).assign(to: \.workoutDetail, on: self)
     }
     
     func unbind() {
+        print("UNBIND WORKOUT_DETAIL_VIEWMODEL")
         workoutDetailCancellable?.cancel()
+    }
+    
+    deinit {
+        print("DEINIT WORKOUT_DETAIL_VIEWMODEL")
     }
     
     // MARK: - Workout Exercise List Management
@@ -65,12 +76,13 @@ class WorkoutDetailViewModel: ObservableObject {
     /// Returns a publisher of the workouts in the list
     private func workoutDetailPublisher(in database: AppDatabase) -> AnyPublisher<AppDatabase.WorkoutDetail?, Never> {
         database.workoutDetailPublisher(workoutID: workoutID)
+            .breakpointOnError()
             .catch { error in // or use .replaceError() ???
                 // Turn database errors into an empty list.
                 // Eventual error presentation is left as an exercise for the reader.
                 Just(nil)
             }
-            .print()
+//            .print()
             .eraseToAnyPublisher()
     }
     

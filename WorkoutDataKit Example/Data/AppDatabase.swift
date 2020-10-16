@@ -132,7 +132,7 @@ extension AppDatabase {
     
     /// Support for `createRandomWorkoutsIfEmpty()` and `randomiseWorkouts()`.
     private func _createRandomWorkouts(_ db: Database) throws {
-        for _ in 0 ..< 8 {
+        for _ in 0 ..< 1000 {
             try _createRandomWorkout(db)
         }
     }
@@ -158,7 +158,7 @@ extension AppDatabase {
     func workoutsOrderedByStartDatePublisher() -> AnyPublisher<[Workout], Error> {
         ValueObservation
             .tracking(Workout.all().orderedByStartDate().fetchAll)
-            .publisher(in: dbWriter)
+            .publisher(in: dbWriter, scheduling: .immediate)
             .eraseToAnyPublisher()
     }
 }
@@ -191,7 +191,6 @@ extension AppDatabase {
             .eraseToAnyPublisher()
     }
     
-    /// Save (insert or update) a workout.
     func updateWorkout(_ workout: inout Workout) throws {
         try dbWriter.write { db in
             try workout.update(db)
@@ -225,5 +224,55 @@ extension AppDatabase {
             }
             .publisher(in: dbWriter, scheduling: .immediate)
             .eraseToAnyPublisher()
+    }
+}
+
+extension AppDatabase {
+    func updateWorkoutSet(_ workoutSet: inout WorkoutSet) throws {
+        try dbWriter.write { db in
+            try workoutSet.update(db)
+        }
+    }
+}
+
+extension AppDatabase {
+    // MARK: Single
+    
+    func workout(id: Int64) throws -> Workout? {
+        try dbWriter.read { db in
+            try Workout.filter(key: id).fetchOne(db)
+        }
+    }
+    
+    func workoutExercise(id: Int64) throws -> Workout? {
+        try dbWriter.read { db in
+            try Workout.filter(key: id).fetchOne(db)
+        }
+    }
+    
+    func workoutSet(id: Int64) throws -> Workout? {
+        try dbWriter.read { db in
+            try Workout.filter(key: id).fetchOne(db)
+        }
+    }
+    
+    // MARK: Collection
+    
+    func workouts() throws -> [Workout] {
+        try dbWriter.read { db in
+            try Workout.fetchAll(db)
+        }
+    }
+    
+    func workoutExercises(workoutID: Int64) throws -> [WorkoutExercise] {
+        try dbWriter.read { db in
+            try WorkoutExercise.all().filterByWorkout(key: workoutID).fetchAll(db)
+        }
+    }
+    
+    func workoutSets(workoutExerciseID: Int64) throws -> [WorkoutSet] {
+        try dbWriter.read { db in
+            try WorkoutSet.all().filterByWorkoutExercise(key: workoutExerciseID).fetchAll(db)
+        }
     }
 }

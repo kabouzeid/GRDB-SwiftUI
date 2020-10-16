@@ -22,6 +22,12 @@ extension AppDatabase {
             let dbPool = try DatabasePool(path: url.path)
             let appDatabase = try AppDatabase(dbPool)
             
+            try! dbPool.read { db in
+                db.trace(options: .profile) { event in
+                    print(event)
+                }
+            }
+            
             // Populate the database if it is empty, for better demo purpose.
             try appDatabase.createRandomWorkoutsIfEmpty()
             

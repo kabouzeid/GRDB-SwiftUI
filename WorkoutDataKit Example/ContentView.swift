@@ -66,3 +66,22 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+//struct SOTest: View {
+//    @State private var workout: Workout?
+//
+//    var body: some View {
+//        VStack {
+//            Text("Workout ID: \(workout?.id.map { String($0) } ?? "nil")")
+//
+//            if let id = workout?.id {
+//                WorkoutDetailView(viewModel: .init(database: .shared, workoutID: id))
+//                    .id(id)
+//            }
+//
+//            Button("Show Random Workout") {
+//                self.workout = try! AppDatabase.shared.workouts().randomElement()!
+//            }
+//        }
+//    }
+//}

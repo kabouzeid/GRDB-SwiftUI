@@ -12,6 +12,8 @@ struct WorkoutDetailView: View {
     
     var body: some View {
         List {
+            Text("ID: " + (viewModel.workoutId.map { "\($0)" } ?? "nil"))
+            
             Section {
                 TextField("Title", text: viewModel.workoutTitle, onEditingChanged: { isEditingTextField in
                     if !isEditingTextField {
@@ -50,7 +52,13 @@ struct WorkoutExerciseRow: View {
 }
 
 struct WorkoutDetailView_Previews: PreviewProvider {
+    static let appDatabase = AppDatabase.random()
+    
+    static var workout: Workout? {
+        try! appDatabase.workouts().first
+    }
+    
     static var previews: some View {
-        WorkoutDetailView(viewModel: WorkoutDetailViewModel(database: .random(), workoutID: 0))
+        WorkoutDetailView(viewModel: WorkoutDetailViewModel(database: appDatabase, workoutID: workout?.id ?? 0))
     }
 }

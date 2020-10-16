@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct WorkoutExerciseDetailView: View {
-    @ObservedObject var viewModel: WorkoutExerciseDetailViewModel
+    @StateObject var viewModel: WorkoutExerciseDetailViewModel
     
     var body: some View {
         List {
             ForEach(viewModel.workoutSets) { workoutSet in
-                WorkoutSetRow(workoutSet: workoutSet)
+                WorkoutSetCell(viewModel: viewModel.workoutSetCellViewModel(workoutSet: workoutSet))
             }
             .onDelete { offsets in
                 self.viewModel.deleteWorkoutExercises(atOffsets: offsets)
@@ -27,16 +27,16 @@ struct WorkoutExerciseDetailView: View {
     }
 }
 
-struct WorkoutSetRow: View {
-    let workoutSet: WorkoutSet
-    
-    var body: some View {
-        Text("\(workoutSet.weight) kg × \(workoutSet.repetitions)")
-    }
-}
-
 struct WorkoutExerciseDetailView_Previews: PreviewProvider {
+    static let appDatabase = AppDatabase.random()
+    
+    static var workoutExercise: WorkoutExercise? {
+        guard let workout = try! appDatabase.workouts().first else { return nil }
+        guard let workoutExercise = try! appDatabase.workoutExercises(workoutID: workout.id!).first else { return nil }
+        return workoutExercise
+    }
+    
     static var previews: some View {
-        WorkoutExerciseDetailView(viewModel: .init(database: .random(), workoutExercsieID: 0))
+        WorkoutExerciseDetailView(viewModel: .init(database: appDatabase, workoutExercsieID: workoutExercise?.id ?? 0))
     }
 }
