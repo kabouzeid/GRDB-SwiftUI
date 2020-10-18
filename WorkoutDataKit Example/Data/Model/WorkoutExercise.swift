@@ -72,8 +72,12 @@ extension DerivableRequest where RowDecoder == WorkoutExercise {
     ///     let workouts = try dbQueue.read { db in
     ///         try Workout.all().orderedByStartDate().fetchAll(db)
     ///     }
-    func filterByWorkout(key: Int64) -> Self {
-        filter(WorkoutExercise.Columns.workoutID == key)
+    func filterBy(workoutID: Int64) -> Self {
+        filter(WorkoutExercise.Columns.workoutID == workoutID)
+    }
+    
+    func filterBy(name: String) -> Self {
+        filter(WorkoutExercise.Columns.name == name)
     }
     
     func ordered() -> Self {

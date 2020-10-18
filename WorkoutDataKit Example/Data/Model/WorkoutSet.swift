@@ -72,8 +72,8 @@ extension WorkoutSet: Codable, FetchableRecord, MutablePersistableRecord {
 /// See https://github.com/groue/GRDB.swift/blob/master/README.md#requests
 /// See https://github.com/groue/GRDB.swift/blob/master/Documentation/GoodPracticesForDesigningRecordTypes.md
 extension DerivableRequest where RowDecoder == WorkoutSet {
-    func filterByWorkoutExercise(key: Int64) -> Self {
-        filter(WorkoutSet.Columns.workoutExerciseID == key)
+    func filterBy(workoutExerciseID: Int64) -> Self {
+        filter(WorkoutSet.Columns.workoutExerciseID == workoutExerciseID)
     }
     
     func ordered() -> Self {

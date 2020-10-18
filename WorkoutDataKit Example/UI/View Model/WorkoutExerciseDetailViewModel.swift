@@ -10,10 +10,14 @@ import Combine
 import SwiftUI
 
 class WorkoutExerciseDetailViewModel: ObservableObject {
-    @Published private var workoutExerciseDetail: AppDatabase.WorkoutExerciseDetail?
+    @Published private var workoutExerciseDetail: AppDatabase.WorkoutExerciseDetailPublisherResult = (nil, [])
 
     var workoutSets: [WorkoutSet] {
-        workoutExerciseDetail?.workoutSets ?? []
+        workoutExerciseDetail.workoutExerciseWithSets?.workoutSets ?? []
+    }
+    
+    var workoutSetHistory: [AppDatabase.WorkoutSetsWithWorkoutInfo] {
+        workoutExerciseDetail.workoutExerciseHistory
     }
 
     private let database: AppDatabase
@@ -44,26 +48,21 @@ class WorkoutExerciseDetailViewModel: ObservableObject {
         WorkoutSetCellViewModel(database: database, workoutSet: workoutSet)
     }
 
-    // MARK: - Workout Exercise List Management
+    // MARK: - Workout Set List Management
 
-    func deleteWorkoutExercises(atOffsets offsets: IndexSet) {
+    func deleteWorkoutSets(atOffsets offsets: IndexSet) {
         // Eventual error presentation is left as an exercise for the reader.
-        let workoutExerciseIDs = offsets.compactMap { workoutExerciseDetail?.workoutSets[$0].id }
-        try! database.deleteWorkoutExercises(ids: workoutExerciseIDs)
+        let workoutSetIDs = offsets.compactMap { workoutSets[$0].id }
+        try! database.deleteWorkoutSets(ids: workoutSetIDs)
     }
 
     // MARK: - Private
 
     /// Returns a publisher of the workouts in the list
-    private func workoutExerciseDetailPublisher(in database: AppDatabase) -> AnyPublisher<AppDatabase.WorkoutExerciseDetail?, Never> {
+    private func workoutExerciseDetailPublisher(in database: AppDatabase) -> AnyPublisher<AppDatabase.WorkoutExerciseDetailPublisherResult, Never> {
         database.workoutExerciseDetailPublisher(workoutExerciseID: workoutExercsieID)
             .breakpointOnError()
-            .catch { error in // or use .replaceError() ???
-                // Turn database errors into an empty list.
-                // Eventual error presentation is left as an exercise for the reader.
-                Just(nil)
-            }
-//            .print()
+            .replaceError(with: (nil, []))
             .eraseToAnyPublisher()
     }
 }

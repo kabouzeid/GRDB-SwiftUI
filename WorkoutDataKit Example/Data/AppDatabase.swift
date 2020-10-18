@@ -1,5 +1,7 @@
 import GRDB
 import Combine
+import Foundation
+import os.log
 
 /// AppDatabase lets the application access the database.
 ///
@@ -7,6 +9,8 @@ import Combine
 /// https://github.com/groue/GRDB.swift/blob/master/Documentation/GoodPracticesForDesigningRecordTypes.md
 struct AppDatabase {
     private let dbWriter: DatabaseWriter
+    
+    private static let log = OSLog(subsystem: "com.kabouzeid.WorkoutDataKit-Example", category: "database")
     
     /// Creates an AppDatabase and make sure the database schema is ready.
     init(_ dbWriter: DatabaseWriter) throws {
@@ -210,17 +214,55 @@ extension AppDatabase {
     
     // MARK: Reads
     
-    struct WorkoutExerciseDetail: Decodable, FetchableRecord {
+    struct WorkoutExerciseWithSets: Decodable, FetchableRecord {
         var workoutExercise: WorkoutExercise
         var workoutSets: [WorkoutSet]
     }
-    func workoutExerciseDetailPublisher(workoutExerciseID: Int64) -> AnyPublisher<WorkoutExerciseDetail?, Error> {
+    struct WorkoutSetsWithWorkoutInfo {
+        var workoutSets: [WorkoutSet]
+        var workoutStartDate: Date
+        var workoutID: Int64
+    }
+    typealias WorkoutExerciseDetailPublisherResult = (workoutExerciseWithSets: WorkoutExerciseWithSets?, workoutExerciseHistory: [WorkoutSetsWithWorkoutInfo])
+    func workoutExerciseDetailPublisher(workoutExerciseID: Int64) -> AnyPublisher<WorkoutExerciseDetailPublisherResult, Error> {
         ValueObservation
             .tracking { db in
                 let request = WorkoutExercise
                     .filter(key: workoutExerciseID)
                     .including(all: WorkoutExercise.workoutSets)
-                return try WorkoutExerciseDetail.fetchOne(db, request)
+                
+                os_signpost(.begin, log: Self.log, name: "fetch workout set history")
+                
+                let historyRequest: SQLRequest<Row> = """
+                        SELECT
+                            workoutSet.*, workout.startDate AS _workout_startDate, workout.id AS _workout_id
+                        FROM
+                            workoutSet
+                        JOIN workoutExercise ON workoutExerciseID = workoutExercise.id AND workoutExercise.name IN (SELECT name FROM workoutExercise WHERE id = \(workoutExerciseID))
+                        JOIN workout ON workoutID = workout.id
+                        ORDER BY
+                            startDate desc,
+                            workout.id,
+                            workoutExercise.id,
+                            workoutSet.orderIndex;
+                        """
+                
+                let workoutSetHistoryCursor = try historyRequest.fetchCursor(db)
+                
+                var workoutExerciseDetailHistory = [WorkoutSetsWithWorkoutInfo]()
+                var lastWorkoutExerciseID: Int64?
+                try workoutSetHistoryCursor.forEach { row in
+                    let workoutSet = WorkoutSet(row: row)
+                    if lastWorkoutExerciseID != workoutSet.workoutExerciseID {
+                        workoutExerciseDetailHistory.append(WorkoutSetsWithWorkoutInfo(workoutSets: [], workoutStartDate: row["_workout_startDate"], workoutID: row["_workout_id"]))
+                    }
+                    lastWorkoutExerciseID = workoutSet.workoutExerciseID
+                    workoutExerciseDetailHistory[workoutExerciseDetailHistory.count - 1].workoutSets.append(workoutSet)
+                }
+                
+                os_signpost(.end, log: Self.log, name: "fetch workout set history")
+                
+                return (try WorkoutExerciseWithSets.fetchOne(db, request), workoutExerciseDetailHistory)
             }
             .publisher(in: dbWriter, scheduling: .immediate)
             .eraseToAnyPublisher()
@@ -266,13 +308,13 @@ extension AppDatabase {
     
     func workoutExercises(workoutID: Int64) throws -> [WorkoutExercise] {
         try dbWriter.read { db in
-            try WorkoutExercise.all().filterByWorkout(key: workoutID).fetchAll(db)
+            try WorkoutExercise.all().filterBy(workoutID: workoutID).fetchAll(db)
         }
     }
     
     func workoutSets(workoutExerciseID: Int64) throws -> [WorkoutSet] {
         try dbWriter.read { db in
-            try WorkoutSet.all().filterByWorkoutExercise(key: workoutExerciseID).fetchAll(db)
+            try WorkoutSet.all().filterBy(workoutExerciseID: workoutExerciseID).fetchAll(db)
         }
     }
 }

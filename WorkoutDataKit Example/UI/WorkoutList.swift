@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WorkoutList: View {
-    @ObservedObject var viewModel: WorkoutListViewModel
+    @StateObject var viewModel: WorkoutListViewModel
     
     var body: some View {
         List {

@@ -19,6 +19,7 @@ extension AppDatabase {
             let url: URL = try FileManager.default
                     .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                     .appendingPathComponent("db.sqlite")
+            print("DB path: \(url.path)")
             let dbPool = try DatabasePool(path: url.path)
             let appDatabase = try AppDatabase(dbPool)
             

@@ -12,11 +12,21 @@ struct WorkoutExerciseDetailView: View {
     
     var body: some View {
         List {
-            ForEach(viewModel.workoutSets) { workoutSet in
-                WorkoutSetCell(viewModel: viewModel.workoutSetCellViewModel(workoutSet: workoutSet))
+            Section {
+                ForEach(viewModel.workoutSets) { workoutSet in
+                    WorkoutSetCell(viewModel: viewModel.workoutSetCellViewModel(workoutSet: workoutSet))
+                }
+                .onDelete { offsets in
+                    self.viewModel.deleteWorkoutSets(atOffsets: offsets)
+                }
             }
-            .onDelete { offsets in
-                self.viewModel.deleteWorkoutExercises(atOffsets: offsets)
+            
+            ForEach(viewModel.workoutSetHistory, id: \.workoutID) { workoutSetsWithWorkoutInfo in
+                Section(header: Text(workoutSetsWithWorkoutInfo.workoutStartDate, style: .date)) {
+                    ForEach(workoutSetsWithWorkoutInfo.workoutSets) { workoutSet in
+                        WorkoutSetCell(viewModel: viewModel.workoutSetCellViewModel(workoutSet: workoutSet))
+                    }
+                }
             }
         }
         .listStyle(InsetGroupedListStyle())
