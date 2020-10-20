@@ -1,6 +1,7 @@
 import GRDB
 import Combine
 import os.log
+import Foundation
 
 /// AppDatabase lets the application access the database.
 ///
@@ -222,6 +223,7 @@ extension AppDatabase {
     
     struct WorkoutExerciseWithSets: Decodable, FetchableRecord {
         var workoutExercise: WorkoutExercise
+        var workout: Workout
         var workoutSets: [WorkoutSet]
     }
     struct WorkoutSetsWithWorkout {
@@ -235,11 +237,12 @@ extension AppDatabase {
                 let workoutExerciseWithSets = try WorkoutExercise
                     .filter(key: workoutExerciseID)
                     .including(all: WorkoutExercise.workoutSets)
+                    .including(required: WorkoutExercise.workout)
                     .asRequest(of: WorkoutExerciseWithSets.self)
                     .fetchOne(db)
                 
                 os_signpost(.begin, log: Self.log, name: "fetch workout set history")
-                let workoutSetsWithWorkouts = try fetchWorkoutSetsWithWorkouts(db: db, workoutExerciseName: workoutExerciseWithSets?.workoutExercise.name)
+                let workoutSetsWithWorkouts = try fetchWorkoutSetsWithWorkouts(db: db, workoutExerciseName: workoutExerciseWithSets?.workoutExercise.name, upToStartDate: workoutExerciseWithSets?.workout.startDate)
                 os_signpost(.end, log: Self.log, name: "fetch workout set history")
                 
                 return (workoutExerciseWithSets, workoutSetsWithWorkouts)
@@ -256,7 +259,7 @@ extension AppDatabase {
             .eraseToAnyPublisher()
     }
     
-    private func fetchWorkoutSetsWithWorkouts(db: Database, workoutExerciseName: String?) throws -> [WorkoutSetsWithWorkout] {
+    private func fetchWorkoutSetsWithWorkouts(db: Database, workoutExerciseName: String?, upToStartDate: Date?) throws -> [WorkoutSetsWithWorkout] {
         /*
         SELECT
             workoutSet.*,
@@ -266,6 +269,7 @@ extension AppDatabase {
             JOIN workoutExercise ON workoutExercise.id = workoutSet.workoutExerciseID
             AND workoutExercise.name = `workoutExerciseName`
             JOIN workout ON workout.id = workoutExercise.workoutID
+            AND workout.startDate < `upToStartDate`
         ORDER BY
             workout.startDate DESC,
             workout.id,
@@ -279,7 +283,9 @@ extension AppDatabase {
         let workoutSetsWithWorkoutsCursor = try WorkoutSet
             .joining(required: WorkoutSet.workoutExercise.aliased(workoutExerciseAlias)
                         .filter(WorkoutExercise.Columns.name == workoutExerciseName)
-                        .including(required: WorkoutExercise.workout.aliased(workoutAlias))
+                        .including(required: WorkoutExercise.workout.aliased(workoutAlias)
+                                    .filter(Workout.Columns.startDate < upToStartDate ?? Date())
+                        )
             )
             .order([
                 workoutAlias[Workout.Columns.startDate].desc,
