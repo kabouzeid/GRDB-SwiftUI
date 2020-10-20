@@ -52,12 +52,7 @@ class WorkoutListViewModel: ObservableObject {
     private func workoutsPublisher(in database: AppDatabase) -> AnyPublisher<[Workout], Never> {
         database.workoutsOrderedByStartDatePublisher()
             .breakpointOnError()
-            .catch { error in
-                // Turn database errors into an empty list.
-                // Eventual error presentation is left as an exercise for the reader.
-                Just<[Workout]>([])
-            }
-//            .print()
+            .replaceError(with: [])
             .eraseToAnyPublisher()
     }
 }

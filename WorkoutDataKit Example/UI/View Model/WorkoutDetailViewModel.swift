@@ -77,12 +77,7 @@ class WorkoutDetailViewModel: ObservableObject {
     private func workoutDetailPublisher(in database: AppDatabase) -> AnyPublisher<AppDatabase.WorkoutDetail?, Never> {
         database.workoutDetailPublisher(workoutID: workoutID)
             .breakpointOnError()
-            .catch { error in // or use .replaceError() ???
-                // Turn database errors into an empty list.
-                // Eventual error presentation is left as an exercise for the reader.
-                Just(nil)
-            }
-//            .print()
+            .replaceError(with: nil)
             .eraseToAnyPublisher()
     }
     

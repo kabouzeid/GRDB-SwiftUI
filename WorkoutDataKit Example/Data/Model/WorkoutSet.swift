@@ -8,7 +8,7 @@
 import Foundation
 import GRDB
 
-struct WorkoutSet {
+struct WorkoutSet: Codable, Identifiable {
     var id: Int64?
     
     var orderIndex: Int64
@@ -20,12 +20,46 @@ struct WorkoutSet {
 }
 
 extension WorkoutSet {
-    static let workoutExercise = hasOne(WorkoutExercise.self)
+    static let workoutExercise = belongsTo(WorkoutExercise.self)
 }
 
 extension WorkoutSet {
     var workoutExercise: QueryInterfaceRequest<WorkoutExercise> {
         request(for: Self.workoutExercise)
+    }
+}
+
+// SQL generation
+extension WorkoutSet: TableRecord{
+    /// The table columns
+    enum Columns {
+        static let id = Column(WorkoutSet.CodingKeys.id)
+        static let orderIndex = Column(WorkoutSet.CodingKeys.orderIndex)
+        static let weight = Column(WorkoutSet.CodingKeys.weight)
+        static let repetitions = Column(WorkoutSet.CodingKeys.repetitions)
+        static let workoutExerciseID = Column(WorkoutSet.CodingKeys.workoutExerciseID)
+    }
+}
+
+// Fetching methods
+extension WorkoutSet: FetchableRecord { }
+
+// Persistence methods
+extension WorkoutSet: MutablePersistableRecord {
+    /// Updates a workout id after it has been inserted in the database.
+    mutating func didInsert(with rowID: Int64, for column: String?) {
+        id = rowID
+    }
+}
+
+// MARK: - Database Requests
+extension DerivableRequest where RowDecoder == WorkoutSet {
+    func filterBy(workoutExerciseID: Int64) -> Self {
+        filter(WorkoutSet.Columns.workoutExerciseID == workoutExerciseID)
+    }
+    
+    func ordered() -> Self {
+        order(WorkoutSet.Columns.orderIndex)
     }
 }
 
@@ -44,41 +78,3 @@ extension WorkoutSet {
         Int64.random(in: 1...12)
     }
 }
-
-// MARK: - Persistence
-
-/// Make WorkoutExercise a Codable Record.
-///
-/// See https://github.com/groue/GRDB.swift/blob/master/README.md#records
-extension WorkoutSet: Codable, FetchableRecord, MutablePersistableRecord {
-    // Define database columns from CodingKeys
-    fileprivate enum Columns {
-        static let orderIndex = Column(CodingKeys.orderIndex)
-        static let weight = Column(CodingKeys.weight)
-        static let repetitions = Column(CodingKeys.repetitions)
-        static let workoutExerciseID = Column(CodingKeys.workoutExerciseID)
-    }
-    
-    /// Updates a workout id after it has been inserted in the database.
-    mutating func didInsert(with rowID: Int64, for column: String?) {
-        id = rowID
-    }
-}
-
-// MARK: - Player Database Requests
-
-/// Define some workout requests used by the application.
-///
-/// See https://github.com/groue/GRDB.swift/blob/master/README.md#requests
-/// See https://github.com/groue/GRDB.swift/blob/master/Documentation/GoodPracticesForDesigningRecordTypes.md
-extension DerivableRequest where RowDecoder == WorkoutSet {
-    func filterBy(workoutExerciseID: Int64) -> Self {
-        filter(WorkoutSet.Columns.workoutExerciseID == workoutExerciseID)
-    }
-    
-    func ordered() -> Self {
-        order(WorkoutSet.Columns.orderIndex)
-    }
-}
-
-extension WorkoutSet: Identifiable {}

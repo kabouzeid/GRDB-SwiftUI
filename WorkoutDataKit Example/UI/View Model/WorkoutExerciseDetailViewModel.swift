@@ -16,7 +16,7 @@ class WorkoutExerciseDetailViewModel: ObservableObject {
         workoutExerciseDetail.workoutExerciseWithSets?.workoutSets ?? []
     }
     
-    var workoutSetHistory: [AppDatabase.WorkoutSetsWithWorkoutInfo] {
+    var workoutSetHistory: [AppDatabase.WorkoutSetsWithWorkout] {
         workoutExerciseDetail.workoutExerciseHistory
     }
 

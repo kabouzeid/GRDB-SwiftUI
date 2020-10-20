@@ -1,7 +1,7 @@
 import Foundation
 import GRDB
 
-struct Workout {
+struct Workout: Codable, Identifiable {
     var id: Int64?
     
     var title: String
@@ -18,6 +18,36 @@ extension Workout {
 extension Workout {
     var workoutExercises: QueryInterfaceRequest<WorkoutExercise> {
         request(for: Self.workoutExercises)
+    }
+}
+
+// SQL generation
+extension Workout: TableRecord {
+    /// The table columns
+    enum Columns {
+        static let id = Column(Workout.CodingKeys.id)
+        static let title = Column(Workout.CodingKeys.title)
+        static let comment = Column(Workout.CodingKeys.comment)
+        static let startDate = Column(Workout.CodingKeys.startDate)
+        static let endDate = Column(Workout.CodingKeys.endDate)
+    }
+}
+
+// Fetching methods
+extension Workout: FetchableRecord { }
+
+// Persistence methods
+extension Workout: MutablePersistableRecord {
+    // Update auto-incremented id upon successful insertion
+    mutating func didInsert(with rowID: Int64, for column: String?) {
+        id = rowID
+    }
+}
+
+// MARK: - Database Requests
+extension DerivableRequest where RowDecoder == Workout {
+    func orderedByStartDate() -> Self {
+        order(Workout.Columns.startDate.desc, Workout.Columns.title)
     }
 }
 
@@ -40,43 +70,3 @@ extension Workout {
     }
 }
 
-// MARK: - Persistence
-
-/// Make Player a Codable Record.
-///
-/// See https://github.com/groue/GRDB.swift/blob/master/README.md#records
-extension Workout: Codable, FetchableRecord, MutablePersistableRecord {
-    // Define database columns from CodingKeys
-    fileprivate enum Columns {
-        static let title = Column(CodingKeys.title)
-        static let comment = Column(CodingKeys.comment)
-        static let startDate = Column(CodingKeys.startDate)
-        static let endDate = Column(CodingKeys.endDate)
-    }
-    
-    /// Updates a workout id after it has been inserted in the database.
-    mutating func didInsert(with rowID: Int64, for column: String?) {
-        id = rowID
-    }
-}
-
-// MARK: - Player Database Requests
-
-/// Define some workout requests used by the application.
-///
-/// See https://github.com/groue/GRDB.swift/blob/master/README.md#requests
-/// See https://github.com/groue/GRDB.swift/blob/master/Documentation/GoodPracticesForDesigningRecordTypes.md
-extension DerivableRequest where RowDecoder == Workout {
-    /// A request of workouts ordered by start date
-    ///
-    /// For example:
-    ///
-    ///     let workouts = try dbQueue.read { db in
-    ///         try Workout.all().orderedByStartDate().fetchAll(db)
-    ///     }
-    func orderedByStartDate() -> Self {
-        order(Workout.Columns.startDate.desc, Workout.Columns.title)
-    }
-}
-
-extension Workout: Identifiable {}

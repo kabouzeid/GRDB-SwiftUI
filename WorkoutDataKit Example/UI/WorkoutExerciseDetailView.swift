@@ -21,8 +21,8 @@ struct WorkoutExerciseDetailView: View {
                 }
             }
             
-            ForEach(viewModel.workoutSetHistory, id: \.workoutID) { workoutSetsWithWorkoutInfo in
-                Section(header: Text(workoutSetsWithWorkoutInfo.workoutStartDate, style: .date)) {
+            ForEach(viewModel.workoutSetHistory, id: \.workout.id) { workoutSetsWithWorkoutInfo in
+                Section(header: Text(workoutSetsWithWorkoutInfo.workout.startDate, style: .date)) {
                     ForEach(workoutSetsWithWorkoutInfo.workoutSets) { workoutSet in
                         WorkoutSetCell(viewModel: viewModel.workoutSetCellViewModel(workoutSet: workoutSet))
                     }

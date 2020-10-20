@@ -1,6 +1,5 @@
 import GRDB
 import Combine
-import Foundation
 import os.log
 
 /// AppDatabase lets the application access the database.
@@ -35,31 +34,38 @@ struct AppDatabase {
             // See https://github.com/groue/GRDB.swift#create-tables
             try db.create(table: "workout") { t in
                 t.autoIncrementedPrimaryKey("id")
-                t.column("title", .text).notNull()
-                    // Sort player names in a localized case insensitive fashion by default
-                    // See https://github.com/groue/GRDB.swift/blob/master/README.md#unicode
-                    .collate(.localizedCaseInsensitiveCompare)
+                t.column("title", .text)
+                    .notNull()
                 t.column("comment", .text)
-                t.column("startDate", .date).notNull()
+                t.column("startDate", .date)
+                    .notNull()
                 t.column("endDate", .date)
             }
             
             try db.create(table: "workoutExercise") { t in
                 t.autoIncrementedPrimaryKey("id")
-                t.column("orderIndex", .integer).notNull()
-                t.column("name", .text).notNull()
-                    // Sort player names in a localized case insensitive fashion by default
-                    // See https://github.com/groue/GRDB.swift/blob/master/README.md#unicode
-                    .collate(.localizedCaseInsensitiveCompare)
-                t.column("workoutID", .integer).notNull().references("workout", onDelete: .cascade)
+                t.column("orderIndex", .integer)
+                    .notNull()
+                t.column("name", .text)
+                    .notNull()
+                t.column("workoutID", .integer)
+                    .notNull()
+                    .indexed()
+                    .references("workout", onDelete: .cascade)
             }
             
             try db.create(table: "workoutSet") { t in
                 t.autoIncrementedPrimaryKey("id")
-                t.column("orderIndex", .integer).notNull()
-                t.column("weight", .double).notNull()
-                t.column("repetitions", .integer).notNull()
-                t.column("workoutExerciseID", .integer).notNull().references("workoutExercise", onDelete: .cascade)
+                t.column("orderIndex", .integer)
+                    .notNull()
+                t.column("weight", .double)
+                    .notNull()
+                t.column("repetitions", .integer)
+                    .notNull()
+                t.column("workoutExerciseID", .integer)
+                    .notNull()
+                    .indexed()
+                    .references("workoutExercise", onDelete: .cascade)
             }
         }
         
@@ -218,54 +224,86 @@ extension AppDatabase {
         var workoutExercise: WorkoutExercise
         var workoutSets: [WorkoutSet]
     }
-    struct WorkoutSetsWithWorkoutInfo {
+    struct WorkoutSetsWithWorkout {
         var workoutSets: [WorkoutSet]
-        var workoutStartDate: Date
-        var workoutID: Int64
+        var workout: Workout
     }
-    typealias WorkoutExerciseDetailPublisherResult = (workoutExerciseWithSets: WorkoutExerciseWithSets?, workoutExerciseHistory: [WorkoutSetsWithWorkoutInfo])
+    typealias WorkoutExerciseDetailPublisherResult = (workoutExerciseWithSets: WorkoutExerciseWithSets?, workoutExerciseHistory: [WorkoutSetsWithWorkout])
     func workoutExerciseDetailPublisher(workoutExerciseID: Int64) -> AnyPublisher<WorkoutExerciseDetailPublisherResult, Error> {
         ValueObservation
             .tracking { db in
-                let request = WorkoutExercise
+                let workoutExerciseWithSets = try WorkoutExercise
                     .filter(key: workoutExerciseID)
                     .including(all: WorkoutExercise.workoutSets)
+                    .asRequest(of: WorkoutExerciseWithSets.self)
+                    .fetchOne(db)
                 
                 os_signpost(.begin, log: Self.log, name: "fetch workout set history")
-                
-                let historyRequest: SQLRequest<Row> = """
-                        SELECT
-                            workoutSet.*, workout.startDate AS _workout_startDate, workout.id AS _workout_id
-                        FROM
-                            workoutSet
-                        JOIN workoutExercise ON workoutExerciseID = workoutExercise.id AND workoutExercise.name IN (SELECT name FROM workoutExercise WHERE id = \(workoutExerciseID))
-                        JOIN workout ON workoutID = workout.id
-                        ORDER BY
-                            startDate desc,
-                            workout.id,
-                            workoutExercise.id,
-                            workoutSet.orderIndex;
-                        """
-                
-                let workoutSetHistoryCursor = try historyRequest.fetchCursor(db)
-                
-                var workoutExerciseDetailHistory = [WorkoutSetsWithWorkoutInfo]()
-                var lastWorkoutExerciseID: Int64?
-                try workoutSetHistoryCursor.forEach { row in
-                    let workoutSet = WorkoutSet(row: row)
-                    if lastWorkoutExerciseID != workoutSet.workoutExerciseID {
-                        workoutExerciseDetailHistory.append(WorkoutSetsWithWorkoutInfo(workoutSets: [], workoutStartDate: row["_workout_startDate"], workoutID: row["_workout_id"]))
-                    }
-                    lastWorkoutExerciseID = workoutSet.workoutExerciseID
-                    workoutExerciseDetailHistory[workoutExerciseDetailHistory.count - 1].workoutSets.append(workoutSet)
-                }
-                
+                let workoutSetsWithWorkouts = try fetchWorkoutSetsWithWorkouts(db: db, workoutExerciseName: workoutExerciseWithSets?.workoutExercise.name)
                 os_signpost(.end, log: Self.log, name: "fetch workout set history")
                 
-                return (try WorkoutExerciseWithSets.fetchOne(db, request), workoutExerciseDetailHistory)
+                return (workoutExerciseWithSets, workoutSetsWithWorkouts)
             }
+            .handleEvents(
+                willTrackRegion: { databaseRegion in
+                    print("Will track databaseRegion=\(databaseRegion)")
+                },
+                databaseDidChange: {
+                    print("Database did change in tracked region")
+                }
+            )
             .publisher(in: dbWriter, scheduling: .immediate)
             .eraseToAnyPublisher()
+    }
+    
+    private func fetchWorkoutSetsWithWorkouts(db: Database, workoutExerciseName: String?) throws -> [WorkoutSetsWithWorkout] {
+        /*
+        SELECT
+            workoutSet.*,
+            workout.*
+        FROM
+            workoutSet
+            JOIN workoutExercise ON workoutExercise.id = workoutSet.workoutExerciseID
+            AND workoutExercise.name = `workoutExerciseName`
+            JOIN workout ON workout.id = workoutExercise.workoutID
+        ORDER BY
+            workout.startDate DESC,
+            workout.id,
+            workoutExercise.id,
+            workoutSet.orderIndex;
+        */
+        
+        let workoutAlias = TableAlias()
+        let workoutExerciseAlias = TableAlias()
+        
+        let workoutSetsWithWorkoutsCursor = try WorkoutSet
+            .joining(required: WorkoutSet.workoutExercise.aliased(workoutExerciseAlias)
+                        .filter(WorkoutExercise.Columns.name == workoutExerciseName)
+                        .including(required: WorkoutExercise.workout.aliased(workoutAlias))
+            )
+            .order([
+                workoutAlias[Workout.Columns.startDate].desc,
+                workoutAlias[Workout.Columns.id],
+                workoutExerciseAlias[WorkoutExercise.Columns.id],
+                WorkoutSet.Columns.orderIndex
+            ])
+            .asRequest(of: Row.self)
+            .fetchCursor(db)
+        
+        // process each row: group the sets by workout exercise
+        var workoutSetsWithWorkouts = [WorkoutSetsWithWorkout]()
+        var lastWorkoutExerciseID: Int64? // for splitting the workout sets
+        try workoutSetsWithWorkoutsCursor.forEach { row in
+            let workoutSet = WorkoutSet(row: row)
+            if lastWorkoutExerciseID != workoutSet.workoutExerciseID {
+                let workout = Workout(row: row.scopes["workoutExercise"]!.scopes["workout"]!)
+                workoutSetsWithWorkouts.append(WorkoutSetsWithWorkout(workoutSets: [], workout: workout))
+            }
+            lastWorkoutExerciseID = workoutSet.workoutExerciseID
+            workoutSetsWithWorkouts[workoutSetsWithWorkouts.count - 1].workoutSets.append(workoutSet)
+        }
+        
+        return workoutSetsWithWorkouts
     }
 }
 
