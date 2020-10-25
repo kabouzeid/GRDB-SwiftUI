@@ -12,8 +12,6 @@ struct WorkoutDetailView: View {
     
     var body: some View {
         List {
-            Text("ID: " + (viewModel.workoutId.map { "\($0)" } ?? "nil"))
-            
             Section {
                 TextField("Title", text: viewModel.workoutTitle, onEditingChanged: { isEditingTextField in
                     if !isEditingTextField {

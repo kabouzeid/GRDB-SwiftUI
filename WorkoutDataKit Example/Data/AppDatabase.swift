@@ -143,7 +143,7 @@ extension AppDatabase {
     
     /// Support for `createRandomWorkoutsIfEmpty()` and `randomiseWorkouts()`.
     private func _createRandomWorkouts(_ db: Database) throws {
-        for _ in 0 ..< 1000 {
+        for _ in 0 ..< 10 {
             try _createRandomWorkout(db)
         }
     }
