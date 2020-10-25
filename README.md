@@ -32,7 +32,7 @@ func fooSubViewModel(foo: Foo) -> FooSubViewModel {
     FooSubViewModel(database: database, foo: foo)
 }
 ```
-See: [WorkoutListViewModel](WorkoutDataKit Example/UI/View Model/WorkoutListViewModel.swift)
+See: [WorkoutListViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutListViewModel.swift)
 
 ### Example (detail) Automatically Refreshing View Model
 ```swift
