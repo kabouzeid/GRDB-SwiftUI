@@ -7,7 +7,7 @@
 
 import Foundation
 
-class WorkoutSetCellViewModel: ObservableObject {
+class WorkoutSetCellViewModel {
     var title: String {
         "\(String(format: "%.1f", workoutSet.weight)) kg × \(workoutSet.repetitions)"
     }
