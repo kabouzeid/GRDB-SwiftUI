@@ -1,5 +1,7 @@
 #  GRDB + SwiftUI Example
 
+## View Models
+
 There are two types of **view models**
 1. **Automatically refreshing** (e.g. using ValueObservations + Combine). They are `ObservableObjects` and should be bound to the View's lifecycle by `@StateObject`. They take *keys*, not records as initialization parameters.
 2. **Static** (e.g. the view is refreshed by a parent view with an automatically refreshing view model). They are stored as normal `let` variables in the view.
@@ -69,7 +71,7 @@ See [WorkoutSetCellViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/mai
 
 
 
-### Summary
+## Summary
 Usually every "screen"/"navigation view page" has *one automatically refreshing view model* that loads all needed records; and *any number of static view models* that get their records directly from the automatic refreshing view model.
 
 
