@@ -12,5 +12,5 @@ Automatically refreshed view models should subscribe to changes in `View.onAppea
 
 ### Examples
 
-Examples for automatic refreshing view models: `WorkoutListViewModel`,  `WorkoutDetailViewModel`,  `WorkoutExerciseDetailViewModel`
+Examples for automatic refreshing view models: `WorkoutListViewModel`,  `WorkoutDetailViewModel`,  `WorkoutExerciseDetailViewModel`
 Example for static view model: `WorkoutSetCellViewModel`
