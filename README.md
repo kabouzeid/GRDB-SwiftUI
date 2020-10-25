@@ -32,7 +32,7 @@ func fooSubViewModel(foo: Foo) -> FooSubViewModel {
     FooSubViewModel(database: database, foo: foo)
 }
 ```
-See: `WorkoutListViewModel`
+See: [WorkoutListViewModel](WorkoutDataKit Example/UI/View Model/WorkoutListViewModel.swift)
 
 ### Example (detail) Automatically Refreshing View Model
 ```swift
