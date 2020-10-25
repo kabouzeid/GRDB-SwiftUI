@@ -4,7 +4,7 @@ There are two types of **view models**
 1. **Automatically refreshing** (e.g. using ValueObservations + Combine). They are `ObservableObjects` and should be bound to the View's lifecycle by `@StateObject`. They take *keys*, not records as initialization parameters.
 2. **Static** (e.g. the view is refreshed by a parent view with an automatically refreshing view model). They are stored as normal `let` variables in the view.
 
-### Example (parent) Automatically Refreshing View Model
+### Automatically Refreshing View Model
 ```swift
 @Published var foos = [Foo]()
 
@@ -34,7 +34,7 @@ func fooSubViewModel(foo: Foo) -> FooSubViewModel {
 ```
 See: [WorkoutListViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutListViewModel.swift)
 
-### Example (detail) Automatically Refreshing View Model
+##### Automatically Refreshing Detail View Model
 ```swift
 @Published var foo: Foo?
 
@@ -52,7 +52,7 @@ func unbind() {
 ```
 See: [WorkoutDetailViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutDetailViewModel.swift),  [WorkoutExerciseDetailViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutExerciseDetailViewModel.swift)
 
-### Example Static View Model
+### Static View Model
 Stored in a `let` constant, is *not* an `ObservableObject`, does *not* observe the data. Instead, the automatically refreshing view model that instantiated this static view model recreates it once `foo` changes!
 Otherwise it has the usual view model responsibilities, i.e. processing the data for the view and providing functions to modify the data.
 
@@ -66,6 +66,8 @@ init(database: AppDatabase, foo: Foo) {
 Use case: the main view has an automatically refreshing view model for `foo` and creates many static view models for it's subviews that also need to read / modify the values of `foo`. However only the automatically refreshing view model is observing changes to `foo` and will recreate the static view models when needed.
 
 See [WorkoutSetCellViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutSetCellViewModel.swift)
+
+
 
 ### Summary
 Usually every "screen"/"navigation view page" has *one automatically refreshing view model* that loads all needed records; and *any number of static view models* that get their records directly from the automatic refreshing view model.
