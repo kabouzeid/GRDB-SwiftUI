@@ -50,7 +50,7 @@ func unbind() {
     cancellable?.cancel()
 }
 ```
-See:  `WorkoutDetailViewModel`,  `WorkoutExerciseDetailViewModel`
+See: [WorkoutDetailViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutDetailViewModel.swift),  [WorkoutExerciseDetailViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutExerciseDetailViewModel.swift)
 
 ### Example Static View Model
 Stored in a `let` constant, is *not* an `ObservableObject`, does *not* observe the data. Instead, a new instance of this view model is created by a parent automatically refreshing view model once `foo` changes!
@@ -65,7 +65,7 @@ init(database: AppDatabase, foo: Foo) {
 
 Use case: the main view has an automatically refreshing view model for `foo` and creates many static view models for it's subviews that also need to read / modify the values of `foo`. However only the automatically refreshing view model is observing changes to `foo` and will recreate the static view models when needed.
 
-See `WorkoutSetCellViewModel`
+See [WorkoutSetCellViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutSetCellViewModel.swift)
 
 ### Summary
 Usually every "screen"/"navigation view page" has *one automatically refreshing view model* that loads all needed records; and *any number of static view models* that get their records directly from the automatic refreshing view model.
