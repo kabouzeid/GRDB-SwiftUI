@@ -53,7 +53,7 @@ func unbind() {
 See: [WorkoutDetailViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutDetailViewModel.swift),  [WorkoutExerciseDetailViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutExerciseDetailViewModel.swift)
 
 ### Example Static View Model
-Stored in a `let` constant, is *not* an `ObservableObject`, does *not* observe the data. Instead, a new instance of this view model is created by a parent automatically refreshing view model once `foo` changes!
+Stored in a `let` constant, is *not* an `ObservableObject`, does *not* observe the data. Instead, the automatically refreshing view model that instantiated this static view model recreates it once `foo` changes!
 Otherwise it has the usual view model responsibilities, i.e. processing the data for the view and providing functions to modify the data.
 
 ```swift
