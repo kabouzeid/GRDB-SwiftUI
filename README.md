@@ -34,7 +34,7 @@ func fooSubViewModel(foo: Foo) -> FooSubViewModel {
 ```
 See: [WorkoutListViewModel](https://github.com/kabouzeid/GRDB-SwiftUI/blob/main/WorkoutDataKit%20Example/UI/View%20Model/WorkoutListViewModel.swift)
 
-##### Automatically Refreshing Detail View Model
+#### Automatically Refreshing Detail View Model
 ```swift
 @Published var foo: Foo?
 
