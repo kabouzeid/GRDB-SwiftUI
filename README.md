@@ -1,4 +1,4 @@
-#  GRDB + SwiftUI Example
+#  GRDB + SwiftUI Architecture Example
 
 ## View Models
 
